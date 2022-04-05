@@ -1,5 +1,17 @@
+/**
+ * Definition of a function that handles and extracts packets and its helping functions.
+ * This file contains pcap callback function that defines how packet is processed when received.
+ * Once packet's type is identified, callback function calls private functions that extracts data
+ * and print them out on stdin.
+ *
+ * This source code serves as submission for second project of class IPK at FIT, BUT 2021/2022.
+ *
+ * @file    packet_handler.c
+ * @author  Hung Do
+ * @date    04/04/2022
+ */
 #include "packet_handler.h"
-#include "header_extract.h"
+#include "header_display.h"
 #include "argumets.h"
 
 #include <net/ethernet.h>       // struct ethhdr
@@ -8,15 +20,14 @@
 #include <netinet/tcp.h>        // struct tcphdr
 #include <netinet/udp.h>        // struct udphdr
 #include <netinet/ip_icmp.h>    // struct icmphdr
-#include <net/if_arp.h>         // struct arphdr
-#include <time.h>
 
 /* current handle */
 static pcap_t *current_handle = NULL;
 
 /**
  * Returns number of bytes to skip ethernet and ip header
- * @param ether_type Type of communication (IPv4 or IPv6)
+ *
+ * @param ether_type[in] Ether type from Ethernet header
  * @return Number of bytes to offset
  */
 static inline size_t get_offset(uint16_t ether_type) {
@@ -24,7 +35,15 @@ static inline size_t get_offset(uint16_t ether_type) {
     return sizeof(struct ethhdr) + (ether_type == 0x0800 ? sizeof(struct iphdr) : sizeof(struct ip6_hdr));
 }
 
-// TODO:
+/**
+ * Display ICMP packet content.
+ *
+ * @param bytes[in]      Packet's buffer
+ * @param size[in]       Buffer size
+ * @param tv[in]         Packet's time of arrival
+ * @param ether_type[in] Ether type from Ethernet header
+ * @return 1 if packet passed through filters and data were displayed; 0 otherwise
+ */
 static int print_icmp_packet(const u_char *bytes, const unsigned size, struct timeval tv, const uint16_t ether_type) {
     // check filter flags
     if (!args_isicmp())
@@ -33,22 +52,21 @@ static int print_icmp_packet(const u_char *bytes, const unsigned size, struct ti
     // get icmp header
     struct icmphdr *icmp = (struct icmphdr *)(bytes + get_offset(ether_type));
     // print packet's data
-    print_timestamp(tv);
+    print_frame_info(tv, size);
     print_eth_header(bytes, size);
-    printf("frame length: %d bytes\n", size);
     print_ip_header(bytes, size, ether_type);
-    printf("type: %u\ncode: %u", icmp->type, icmp->code);
-    puts("\n");
+    print_icmp_header(icmp);
     data_dump(bytes, size);
     return 1;
 }
 
 /**
  * Display TCP packet content.
- * @param bytes[in]   Packet's buffer
- * @param size        Buffer size
- * @param tv          Packet's time of arrival
- * @param ether_type  Type of address (IPv4 or IPv6)
+ *
+ * @param bytes[in]      Packet's buffer
+ * @param size[in]       Buffer size
+ * @param tv[in]         Packet's time of arrival
+ * @param ether_type[in] Ether type from Ethernet header
  * @return 1 if packet passed through filters and data were displayed; 0 otherwise
  */
 static int print_tcp_packet(const u_char *bytes, const unsigned size, struct timeval tv, const uint16_t ether_type) {
@@ -67,22 +85,21 @@ static int print_tcp_packet(const u_char *bytes, const unsigned size, struct tim
     }
 
     // print packet's data
-    print_timestamp(tv);
+    print_frame_info(tv, size);
     print_eth_header(bytes, size);
-    printf("frame length: %d bytes\n", size);
     print_ip_header(bytes, size, ether_type);
-    printf("src port: %d\ndst port: %d\n", ntohs(tcp->th_sport), ntohs(tcp->th_dport));
-    puts("\n");
+    print_tcp_header(tcp);
     data_dump(bytes, size);
     return 1;
 }
 
 /**
  * Display UDP packet content.
- * @param bytes[in]   Packet's buffer
- * @param size        Buffer size
- * @param tv          Packet's time of arrival
- * @param ether_type  Type of address (IPv4 or IPv6)
+ *
+ * @param bytes[in]      Packet's buffer
+ * @param size[in]       Buffer size
+ * @param tv[in]         Packet's time of arrival
+ * @param ether_type[in] Ether type from Ethernet header
  * @return 1 if packet passed through filters and data were displayed; 0 otherwise
  */
 static int print_udp_packet(const u_char *bytes, const unsigned size, struct timeval tv, const uint16_t ether_type) {
@@ -101,35 +118,43 @@ static int print_udp_packet(const u_char *bytes, const unsigned size, struct tim
     }
 
     // print packet's data
-    print_timestamp(tv);
+    print_frame_info(tv, size);
     print_eth_header(bytes, size);
-    printf("frame length: %d bytes\n", size);
     print_ip_header(bytes, size, ether_type);
-    printf("src port: %d\ndst port: %d\n", ntohs(udp->uh_sport), ntohs(udp->uh_dport));
-    puts("\n");
+    print_udp_header(udp);
     data_dump(bytes, size);
     return 1;
 }
 
-// TODO:
-static int print_arp_packet(const u_char *bytes, const unsigned size, struct timeval tv, const uint16_t ether_type) {
+/**
+ * Display ARP packet content.
+ *
+ * @param bytes[in]  Packet's buffer
+ * @param size[in]   Buffer size
+ * @param tv[in]     Packet's time of arrival
+ * @return 1 if packet passed through filters and data were displayed; 0 otherwise
+ */
+static int print_arp_packet(const u_char *bytes, const unsigned size, struct timeval tv) {
     // check filter flags
     if (!args_isarp())
         return 0;
 
-    // get icmp header
-    struct arphdr *arp = (struct arphdr *)(bytes + sizeof(struct ethhdr));
     // print packet's data
-    print_timestamp(tv);
+    print_frame_info(tv, size);
     print_eth_header(bytes, size);
-    printf("frame length: %d bytes\n", size);
-    print_ip_header(bytes, size, ether_type);
-    // TODO: print arp data
-    puts("\n");
+    print_arp_header(bytes);
     data_dump(bytes, size);
     return 1;
 }
 
+/**
+ * Returns protocol in received packet.
+ *
+ * @param bytes[in]      Packet's buffer
+ * @param ether_type[in] Ether type from Ethernet header
+ * @return IPv4 or IPv6 protocols if value found in Internet Protocol header;
+ *          0 otherwise
+ */
 static uint8_t get_protocol(const u_char *bytes, uint16_t ether_type) {
     if (ether_type == IPV6_ETHERTYPE) {
         // IPv6
@@ -150,8 +175,10 @@ void set_handle(pcap_t *handle) {
 }
 
 void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *bytes) {
-    static int counter = 0;
-    // buffer for extracting data
+#ifdef DEBUG
+    puts("Packet received");
+#endif
+    static unsigned counter = 0;
     unsigned frame_size = h->len;
     (void)user;
 
@@ -162,7 +189,7 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
     // get ether type; ignore all communications except for IPv4 and IPv6
     uint8_t protocol = get_protocol(bytes, ether_type);
 
-    switch(protocol) {
+        switch(protocol) {
         case ICMP_PROTOCOL_NUMBER:
         case ICMPV6_PROTOCOL_NUMBER:
             // print ICMP and ICMPv6 packet
@@ -178,8 +205,8 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
             break;
         default:
             // print ARP packet
-            if (ntohs(eth_header->h_proto) == 0x0806)
-                counter += print_arp_packet(bytes, frame_size, h->ts, ether_type);
+            if (ntohs(eth_header->h_proto) == ARP_ETHERTYPE)
+                counter += print_arp_packet(bytes, frame_size, h->ts);
 
             // ignore other packets
             break;

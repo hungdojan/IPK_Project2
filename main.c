@@ -1,5 +1,20 @@
-// issue with types in pcap.h file
-// source: https://stackoverflow.com/questions/15393905/c-pcap-library-unknown-types-error
+/**
+ * Main file of packet sniffer.
+ * This file initializes pcap handle and runs pcap loop.
+ *
+ * This source code serves as submission for second project of class IPK at FIT, BUT 2021/2022.
+ *
+ * @file    main.c
+ * @athor   Hung Do
+ * @date    04/04/2022
+ */
+
+/*
+ * _DEFAULT_SOURCE macro is defined due to strange data types used in pcap.h header
+ * Author: user862787
+ * Date: Mar 13, 2013
+ * Web source: https://stackoverflow.com/questions/15393905/c-pcap-library-unknown-types-error
+ */
 #ifndef _DEFAULT_SOURCE
     #define _DEFAULT_SOURCE
 #include <pcap/pcap.h>
@@ -21,7 +36,7 @@ int display_active_devices() {
     char errbuf[BUFFER_SIZE] = {0,};
 
 #ifdef DEBUG
-    puts("Find available devices ... \n");
+    puts("Search for available devices ...");
 #endif
 
     // load list of available devices
@@ -31,7 +46,7 @@ int display_active_devices() {
     }
 
 #ifdef DEBUG
-    puts("All available devices\n");
+    puts("Scan completed.");
 #endif
     // print list of available devices
     for (pcap_if_t *device = alldevsp; device; device = device->next) {
@@ -41,25 +56,20 @@ int display_active_devices() {
 }
 
 /**
- * Sniffing packets.
- * TODO:
+ * Run packet sniffing.
  */
 int process_packets() {
     char errbuf[BUFFER_SIZE] = {0,};
     char interface_name[BUFFER_SIZE];
 
     // get interface
-    if (args_get_interface(interface_name, BUFFER_SIZE)) {
-        // TODO: buffer too small
-    }
+    args_get_interface(interface_name, BUFFER_SIZE);
 
-    // TODO: initialize sth i don't know what
-    // pcap_t *handle = pcap_open_live(interface_name, 65536, 1, 0, errbuf);
-    // TODO: for testing purposes
-    pcap_t *handle = pcap_open_live("enp2s0", 65536, 1, 10, errbuf);
+    // initialize handle
+    pcap_t *handle = pcap_open_live(interface_name, 65536, 1, 10, errbuf);
 
     if (handle == NULL) {
-        puts("Error occured at buffer\n");
+        fprintf(stderr, "Error occurred while opening %s interface.\nError message: %s\n", interface_name, errbuf);
         return 1;
     }
 #ifdef DEBUG
@@ -67,29 +77,39 @@ int process_packets() {
 #endif
 
     set_handle(handle);
+    // process indefinite number of packets
+    // loop is broke in packet_handler callback function
     pcap_loop(handle, -1, packet_handler, NULL);
+#ifdef DEBUG
+    puts("Packet processing ended with no error.");
+#endif
     return 0;
 }
 
 int main(int argc, char *argv[]) {
     // argument processing
     init_args_t();
-    enum load_results result = load_args(argc, (const char **)argv);
-    // for testing purposes
-    // result = LOAD_NO_INTERFACE;
+    enum load_results result = load_args(argc, (char * const *)argv);
 
-    // TODO:
     switch (result) {
         case LOAD_SUCCESS:
             return process_packets();
+
+        // some error happened while loading arguments
         case LOAD_ERROR:
-            fprintf(stderr, "Error occured while loading arguments\n");
+            fprintf(stderr, "Error occurred while loading arguments\n");
             return 1;
+
+        // interface device was not defined
         case LOAD_NO_INTERFACE:
             return display_active_devices();
+
+        // -h|--help was called
+        case LOAD_HELP:
+        default:
+            break;
     }
     return 0;
-
 }
 
 /* main.c */

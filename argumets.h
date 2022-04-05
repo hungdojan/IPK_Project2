@@ -1,6 +1,8 @@
-/*
- * Header file with function that extracts program arguments of this project.
- * TODO:
+/**
+ * Header file of processing program arguments.
+ * Creates some basic API to get results of argument processing.
+ *
+ * This source code serves as submission for second project of class IPK at FIT, BUT 2021/2022.
  *
  * @file    arguments.h
  * @author  Hung Do
@@ -14,7 +16,8 @@
 enum load_results {
     LOAD_SUCCESS,
     LOAD_ERROR,
-    LOAD_NO_INTERFACE
+    LOAD_NO_INTERFACE,
+    LOAD_HELP
 };
 
 /**
@@ -29,7 +32,7 @@ void init_args_t();
  * @param argc[in] Argument count
  * @return Argument processing results
  */
-enum load_results load_args(const int argc, const char *argv[]);
+enum load_results load_args(int argc, char * const *argv);
 
 /**
  * Returns interface value from argument structure
@@ -38,7 +41,7 @@ enum load_results load_args(const int argc, const char *argv[]);
  * @param buffer_siza[in] Output buffer size
  * @return Non-zero value when error occures.
  */
-int args_get_interface(char *buffer, const size_t buffer_size);
+int args_get_interface(char *buffer, size_t buffer_size);
 
 /**
  * Retuns loaded port.
@@ -83,6 +86,12 @@ int args_isarp();
  *
  * @return Number of values to display.
  */
-int args_get_nof_packets();
+unsigned args_get_nof_packets();
+
+/**
+ * Print out argument structure content.
+ * Used for debugging purposes.
+ */
+void args_print_structure();
 
 #endif // _ARGUMETS_H_
