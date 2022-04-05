@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-std=c11 -Wall -Wextra -pedantic
 #CFLAGS+=-g
 CFLAGS+=-O2
-LDLIBS=-lpcap
+LDLIBS=-lpcap -lm
 #DEFINES=-DDEBUG
 
 TARGET=ipk-sniffer

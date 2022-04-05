@@ -156,11 +156,11 @@ static int print_arp_packet(const u_char *bytes, const unsigned size, struct tim
  *          0 otherwise
  */
 static uint8_t get_protocol(const u_char *bytes, uint16_t ether_type) {
-    if (ether_type == IPV6_ETHERTYPE) {
+    if (ether_type == ETHERTYPE_IPV6) {
         // IPv6
         struct ip6_hdr *ip6 = (struct ip6_hdr *)(bytes + sizeof(struct ethhdr));
         return ip6->ip6_ctlun.ip6_un1.ip6_un1_nxt;
-    } else if (ether_type == IPV4_ETHERTYPE) {
+    } else if (ether_type == ETHERTYPE_IP) {
         // IPv4
         struct iphdr *ip = (struct iphdr *)(bytes + sizeof(struct ethhdr));
         return ip->protocol;
@@ -190,22 +190,22 @@ void packet_handler(u_char *user, const struct pcap_pkthdr *h, const u_char *byt
     uint8_t protocol = get_protocol(bytes, ether_type);
 
         switch(protocol) {
-        case ICMP_PROTOCOL_NUMBER:
-        case ICMPV6_PROTOCOL_NUMBER:
+        case IPPROTO_ICMP:
+        case IPPROTO_ICMPV6:
             // print ICMP and ICMPv6 packet
             counter += print_icmp_packet(bytes, frame_size, h->ts, ether_type);
             break;
-        case TCP_PROTOCOL_NUMBER:
+        case IPPROTO_TCP:
             // print TCP packet
             counter += print_tcp_packet(bytes, frame_size, h->ts, ether_type);
             break;
-        case UDP_PROTOCOL_NUMBER:
+        case IPPROTO_UDP:
             // print UDP packet
             counter += print_udp_packet(bytes, frame_size, h->ts, ether_type);
             break;
         default:
             // print ARP packet
-            if (ntohs(eth_header->h_proto) == ARP_ETHERTYPE)
+            if (ntohs(eth_header->h_proto) == ETHERTYPE_ARP)
                 counter += print_arp_packet(bytes, frame_size, h->ts);
 
             // ignore other packets

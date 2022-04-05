@@ -14,16 +14,6 @@
 #ifndef _PACKET_HANDLER_H_
 #define _PACKET_HANDLER_H_
 
-// define constant
-#define ICMP_PROTOCOL_NUMBER    1
-#define TCP_PROTOCOL_NUMBER     6
-#define UDP_PROTOCOL_NUMBER    17
-#define ICMPV6_PROTOCOL_NUMBER 58
-
-#define IPV4_ETHERTYPE 0x0800
-#define IPV6_ETHERTYPE 0x86DD
-#define ARP_ETHERTYPE  0x0806
-
 #include <pcap.h>
 
 /**
