@@ -11,15 +11,17 @@ struct args_t {
     char interface[INT_BUFFER_SIZE];
     int port;
     char flags;
+    char flags_enable;
     int nof_packets;
 };
 
 // define global variable
 static struct args_t g_args = {
-    .interface = {0,},
-    .port = -1,
-    .flags = 0,
-    .nof_packets = 0
+    .interface = {0,},      /* interface name */
+    .port = -1,             /* port filter */
+    .flags = 0,             /* flags for packet filtering */
+    .flags_enable = 0,      /* when user doesn't specify any flag*/
+    .nof_packets = 1        /* number of packets to display */
 };
 
 
@@ -28,12 +30,12 @@ void init_args_t() {
     g_args.interface[0] = '\0';
     g_args.port = -1;
     g_args.flags = 0;
-    g_args.nof_packets = 1;
+    g_args.nof_packets = 10;
 }
 
-int load_args(const int argc, const char *argv[]) {
+enum load_results load_args(const int argc, const char **argv) {
     // TODO:
-    return 0;
+    return LOAD_SUCCESS;
 }
 
 int args_get_interface(char *buffer, const size_t buffer_size) {
@@ -51,24 +53,22 @@ int args_get_port() {
 }
 
 int args_isicmp() {
-    return g_args.flags & (1 << ICMP_BIT);
+    return g_args.flags & (1 << ICMP_BIT) || !g_args.flags_enable;
 }
 
 int args_istcp() {
-    return g_args.flags & (1 << TCP_BIT);
+    return g_args.flags & (1 << TCP_BIT) || !g_args.flags_enable;
 }
 
 int args_isudp() {
-    return g_args.flags & (1 << UDP_BIT);
+    return g_args.flags & (1 << UDP_BIT) || !g_args.flags_enable;
 }
 
 int args_isarp() {
-    return g_args.flags & (1 << ARP_BIT);
+    return g_args.flags & (1 << ARP_BIT) || !g_args.flags_enable;
 }
 
 int args_get_nof_packets() {
     return g_args.nof_packets;
 }
-
-
 /* argumets.c */

@@ -11,6 +11,12 @@
 
 #include <stdlib.h> // size_t
 
+enum load_results {
+    LOAD_SUCCESS,
+    LOAD_ERROR,
+    LOAD_NO_INTERFACE
+};
+
 /**
  * Initializes argument structure.
  */
@@ -19,17 +25,17 @@ void init_args_t();
 /**
  * Process program arguments.
  *
- * @param argv Vector of arguments
- * @param argc Argument count
- * @return Non-zero value when error occures.
+ * @param argv[in] Vector of arguments
+ * @param argc[in] Argument count
+ * @return Argument processing results
  */
-int load_args(const int argc, const char *argv[]);
+enum load_results load_args(const int argc, const char *argv[]);
 
 /**
  * Returns interface value from argument structure
  *
- * @param buffer Pointer to buffer to return value
- * @param buffer_size Output buffer size
+ * @param buffer[out]     Buffer to store function output 
+ * @param buffer_siza[in] Output buffer size
  * @return Non-zero value when error occures.
  */
 int args_get_interface(char *buffer, const size_t buffer_size);

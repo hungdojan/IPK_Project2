@@ -1,10 +1,12 @@
 CC=gcc
 CFLAGS=-std=c11 -Wall -Wextra -pedantic
-CFLAGS+=-g
-CFLAGS+=-O2
+#CFLAGS+=-g
+#CFLAGS+=-O2
+LDLIBS=-lpcap -lnet
+#DEFINES=-DDEBUG
 
 TARGET=ipk-sniffer
-OBJS= main.o
+OBJS= main.o packet_handler.o argumets.o header_extract.o
 
 LOGIN=xdohun00
 
@@ -20,7 +22,7 @@ run: $(TARGET)
 	./$<
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(DEFINES)
 
 clean:
 	rm -f *.o $(TARGET)
