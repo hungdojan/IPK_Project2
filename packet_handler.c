@@ -32,7 +32,7 @@ static pcap_t *current_handle = NULL;
  */
 static inline size_t get_offset(uint16_t ether_type) {
                                     // ip offset depends on IPv4 or IPv6 structure
-    return sizeof(struct ethhdr) + (ether_type == 0x0800 ? sizeof(struct iphdr) : sizeof(struct ip6_hdr));
+    return sizeof(struct ethhdr) + (ether_type == ETHERTYPE_IP ? sizeof(struct iphdr) : sizeof(struct ip6_hdr));
 }
 
 /**

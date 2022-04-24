@@ -25,10 +25,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS) $(DEFINES)
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o $(TARGET) *.tar
 
 valgrind: $(TARGET)
-	valgrind --leak-check=full --track-origins=yes ./$<
+	sudo valgrind --leak-check=full --track-origins=yes ./$<
 
 debug: $(TARGET)
 	gdb -tui ./$<

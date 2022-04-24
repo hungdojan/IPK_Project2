@@ -5,7 +5,7 @@
  * This source code serves as submission for second project of class IPK at FIT, BUT 2021/2022.
  *
  * @file    main.c
- * @athor   Hung Do
+ * @author   Hung Do
  * @date    04/04/2022
  */
 
@@ -66,12 +66,17 @@ int process_packets() {
     args_get_interface(interface_name, BUFFER_SIZE);
 
     // initialize handle
-    pcap_t *handle = pcap_open_live(interface_name, 65536, 1, 10, errbuf);
+    // pcap_t *handle = pcap_open_live(interface_name, 65536, 1, 10, errbuf);
+    pcap_t *handle = pcap_create(interface_name, errbuf);
 
     if (handle == NULL) {
         fprintf(stderr, "Error occurred while opening %s interface.\nError message: %s\n", interface_name, errbuf);
         return 1;
     }
+    // set some options before activation
+    pcap_set_timeout(handle, 10);
+    pcap_set_buffer_size(handle, 65536);
+    pcap_activate(handle);
 #ifdef DEBUG
     printf("Device %s successfully initializes\n", interface_name);
 #endif
@@ -83,6 +88,7 @@ int process_packets() {
 #ifdef DEBUG
     puts("Packet processing ended with no error.");
 #endif
+    pcap_close(handle);
     return 0;
 }
 

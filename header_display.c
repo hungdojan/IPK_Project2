@@ -17,6 +17,7 @@
 #include <netinet/ip6.h>    // struct ip6_hdr
 #include <net/if_arp.h>         // struct arphdr
 
+#include <string.h>
 #include <math.h>    // ceil
 #include <time.h>    // time_t, struct tm
 
@@ -41,9 +42,22 @@ void print_timestamp(struct timeval timestamp) {
 
     // use localtime to convert time_t to time
     struct tm *my_time = localtime(time);
-    char buffer[100];
-    strftime(buffer, 100, "%Y-%m-%d %H:%M:%S", my_time);
-    printf(PADDING "%s.%.3ld\n","Arrival time:", buffer, timestamp.tv_usec);
+    char buffer[100] = {0,};
+    char timezone_buffer[100] = {0,};
+    strftime(buffer, 100, "%FT%T", my_time);
+
+    // create string of timezone offset
+    // parameter %z doesn't contain colon separator, which is needed for RFC3339
+    // so it needs to be manually added
+    strftime(timezone_buffer, 100, "%z", my_time);
+    int index = strlen(timezone_buffer);
+    for (int i = 0; i < 2; i++) {
+        timezone_buffer[index] = timezone_buffer[index-1];
+        --index;
+    }
+    timezone_buffer[index] = ':';
+
+    printf(PADDING "%s.%ld%s\n","Arrival time:", buffer, timestamp.tv_usec / 100, timezone_buffer);
 }
 
 void print_frame_info(struct timeval time_of_arrival, unsigned frame_size) {
@@ -69,15 +83,15 @@ void print_ip_header(const u_char *bytes, const size_t size, const uint16_t ethe
     // buffer for storing formatted IP address
     char addr_buffer[INET6_ADDRSTRLEN] = {0,};
 
-    puts("------------ Internet Protocol  ----------");
-    if (ethertype == 0x0800) {
+    puts("------------ Internet Protocol -----------");
+    if (ethertype == ETHERTYPE_IP) {
         // IPv4
         struct iphdr *ip = (struct iphdr *)(bytes + sizeof(struct ethhdr));
         inet_ntop(AF_INET, &ip->saddr, addr_buffer, INET_ADDRSTRLEN);
         printf(PADDING "%s\n", "Src IP:", addr_buffer);
         inet_ntop(AF_INET, &ip->daddr, addr_buffer, INET_ADDRSTRLEN);
         printf(PADDING "%s\n", "Drc IP:", addr_buffer);
-    } else if (ethertype == 0x86DD) {
+    } else if (ethertype == ETHERTYPE_IPV6) {
         // IPv6
         struct ip6_hdr *ip = (struct ip6_hdr *)(bytes + sizeof(struct ethhdr));
         inet_ntop(AF_INET6, &ip->ip6_src, addr_buffer, INET6_ADDRSTRLEN);
