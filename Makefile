@@ -6,7 +6,7 @@ LDLIBS=-lpcap -lm
 #DEFINES=-DDEBUG
 
 TARGET=ipk-sniffer
-OBJS= main.o packet_handler.o argumets.o header_display.o
+OBJS=$(patsubst %.c,%.o,$(wildcard *.c))
 
 LOGIN=xdohun00
 
